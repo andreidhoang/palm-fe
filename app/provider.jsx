@@ -1,6 +1,6 @@
 "use client"
 import { UserDetailContext } from '@/context/UserDetailContext';
-import { supabase } from '@/services/supabase';
+import { supabase, isSupabaseConfigured } from '@/services/supabase';
 import { useUser } from '@clerk/nextjs'
 import React, { useEffect, useState } from 'react'
 
@@ -13,30 +13,46 @@ function Provider({ children }) {
     }, [user])
 
     const CreateNewUser = async () => {
-        //If user already exist?
-
-        let { data: Users, error } = await supabase
-            .from('Users')
-            .select('*')
-            .eq('email', user?.primaryEmailAddress.emailAddress);
-
-        console.log(Users)
-        if (Users.length == 0) {
-            const { data, error } = await supabase
-                .from('Users')
-                .insert([
-                    {
-                        name: user?.fullName,
-                        email: user?.primaryEmailAddress.emailAddress
-                    },
-                ])
-                .select();
-            setUserDetail(data[0]);
+        if (!isSupabaseConfigured()) {
+            console.warn('Supabase is not configured. Skipping user creation.');
             return;
         }
 
-        setUserDetail(Users[0]);
+        try {
+            //If user already exist?
+            let { data: Users, error } = await supabase
+                .from('Users')
+                .select('*')
+                .eq('email', user?.primaryEmailAddress.emailAddress);
 
+            if (error) {
+                console.error('Error fetching user:', error);
+                return;
+            }
+
+            console.log(Users)
+            if (Users.length == 0) {
+                const { data, error } = await supabase
+                    .from('Users')
+                    .insert([
+                        {
+                            name: user?.fullName,
+                            email: user?.primaryEmailAddress.emailAddress
+                        },
+                    ])
+                    .select();
+                if (error) {
+                    console.error('Error creating user:', error);
+                    return;
+                }
+                setUserDetail(data[0]);
+                return;
+            }
+
+            setUserDetail(Users[0]);
+        } catch (error) {
+            console.error('Unexpected error in CreateNewUser:', error);
+        }
     }
 
     return (
