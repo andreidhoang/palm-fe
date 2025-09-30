@@ -48,9 +48,9 @@ npm run dev -- -p 5000 -H 0.0.0.0
 ```
 
 ## Replit-Specific Configuration
-- Next.js is configured to accept requests from all origins (`allowedOrigins: ['*']`) to work with Replit's proxy environment
 - Development server listens on `0.0.0.0:5000` for Replit webview compatibility
-- Webpack watch options are configured for the Replit environment
+- Webpack watch options are configured for the Replit environment (polling enabled)
+- Next.js will show a warning about cross-origin requests in development mode, which is expected and safe for Replit's proxy environment
 
 ## Database Schema
 The application uses a Supabase `Chats` table with at minimum:
