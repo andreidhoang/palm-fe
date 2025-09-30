@@ -19,6 +19,9 @@ const nextConfig = {
     }
     return config;
   },
+  experimental: {
+    allowedOrigins: ['*'],
+  },
 };
 
 export default nextConfig;
