@@ -34,8 +34,9 @@ The application requires the following environment variables:
 - `NEXT_PUBLIC_SUPABASE_KEY` - Supabase anon/public key
 
 ### External APIs
-- `BRAVE_API_KEY` - Brave Search API key
-- `NEXT_PUBLIC_GEMINI_API_KEY` - Google Gemini API key
+- `BRAVE_API_KEY` - Brave Search API key (server-side)
+- `GEMINI_API_KEY` - Google Gemini API key (server-side, production)
+- `NEXT_PUBLIC_GEMINI_API_KEY` - Google Gemini API key (client-side, development fallback)
 
 ### Inngest
 - `INNGEST_EVENT_KEY` - (Optional) Inngest event key for production
@@ -53,10 +54,31 @@ npm run dev -- -p 5000 -H 0.0.0.0
 - Next.js will show a warning about cross-origin requests in development mode, which is expected and safe for Replit's proxy environment
 
 ## Database Schema
-The application uses a Supabase `Chats` table with at minimum:
-- `id` - Primary key
-- `aiResp` - AI response text (markdown)
-- Other fields for storing search queries and results
+The application uses three main Supabase tables:
+
+### Users Table
+- `id` - Serial primary key
+- `name` - User's full name
+- `email` - User's email (unique)
+- `created_at` - Timestamp of user creation
+
+### Library Table
+- `id` - Serial primary key
+- `libId` - Unique identifier for each search session
+- `searchInput` - User's search query
+- `userEmail` - Email of user who made the search
+- `type` - Search type ('search' or 'research')
+- `created_at` - Timestamp of search creation
+
+### Chats Table
+- `id` - Serial primary key
+- `libId` - Foreign key to Library table
+- `aiResp` - AI response text (markdown format)
+- `userEmail` - Email of user who received the response
+- `created_at` - Timestamp of response creation
 
 ## Recent Changes
 - 2025-09-30: Initial Replit setup, configured Next.js for Replit proxy, set up workflow
+- 2025-09-30: Implemented comprehensive error handling across all layers (middleware, API routes, database, background jobs)
+- 2025-09-30: Created database schema with Users, Library, and Chats tables for full functionality
+- 2025-09-30: Added production security: server-side API keys, fail-closed authentication, proper error responses
