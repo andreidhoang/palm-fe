@@ -5,14 +5,17 @@ export async function POST(req) {
     const { searchInput, searchType } = await req.json();
 
     if (!searchInput) {
-        return NextResponse.json({ error: 'Please pass user search query' })
+        return NextResponse.json(
+            { error: 'Please pass user search query' },
+            { status: 400 }
+        )
     }
 
     if (!process.env.BRAVE_API_KEY) {
         return NextResponse.json({ 
             error: 'Brave Search API key is not configured. Please add BRAVE_API_KEY to your environment variables.',
             web: { results: [] }
-        })
+        }, { status: 503 })
     }
 
     try {
@@ -31,6 +34,6 @@ export async function POST(req) {
         return NextResponse.json({ 
             error: 'Failed to fetch search results: ' + error.message,
             web: { results: [] }
-        })
+        }, { status: 502 })
     }
 }

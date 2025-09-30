@@ -14,8 +14,14 @@ export const llmModel = inngest.createFunction(
     { id: 'llm-model' },
     { event: 'llm-model' },
     async ({ event, step }) => {
-        if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-            console.error('Gemini API key is not configured');
+        // In development, allow fallback to public key for testing
+        // In production, only use server-only GEMINI_API_KEY
+        const geminiApiKey = process.env.NODE_ENV === 'production' 
+            ? process.env.GEMINI_API_KEY
+            : (process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY);
+        
+        if (!geminiApiKey) {
+            console.error('Gemini API key is not configured. Set GEMINI_API_KEY environment variable.');
             return { error: 'Gemini API key not configured' };
         }
 
@@ -23,7 +29,7 @@ export const llmModel = inngest.createFunction(
             const aiResp = await step.ai.infer('generate-ai-llm-model-call', {
                 model: step.ai.models.gemini({
                     model: 'gemini-2.0-flash-exp-image-generation',
-                    apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY
+                    apiKey: geminiApiKey
                 }),
                 body: {
                     contents: [
