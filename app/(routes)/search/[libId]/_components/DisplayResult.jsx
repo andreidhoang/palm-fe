@@ -103,7 +103,15 @@ function DisplayResult({ searchInputRecord }) {
             .order('id', { foreignTable: 'Chats', ascending: true })
 
             ;
-        setSearchResult(Library[0])
+        if (error) {
+            console.error('Error fetching library records:', error);
+            return;
+        }
+        if (Library && Library.length > 0) {
+            setSearchResult(Library[0])
+        } else {
+            console.warn('No library record found for libId:', libId);
+        }
     }
 
     return (

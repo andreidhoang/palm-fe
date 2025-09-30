@@ -26,9 +26,13 @@ function ChatInputBox() {
     const [loading, setLoading] = useState(false);
     const router = useRouter();
     const onSearchQuery = async () => {
+        if (!userSearchInput?.trim()) {
+            return;
+        }
+        
         setLoading(true);
         const libId = uuidv4();
-        const { data } = await supabase.from('Library').insert([
+        const { data, error } = await supabase.from('Library').insert([
             {
                 searchInput: userSearchInput,
                 userEmail: user?.primaryEmailAddress?.emailAddress,
@@ -36,11 +40,19 @@ function ChatInputBox() {
                 libId: libId
             }
         ]).select();
+        
+        if (error) {
+            console.error('Error saving search query:', error);
+            alert('Failed to save search query. Please try again.');
+            setLoading(false);
+            return;
+        }
+        
+        console.log('Search saved successfully:', data[0]);
         setLoading(false);
 
         //redirect to new screen
         router.push('/search/' + libId)
-        console.log(data[0]);
 
     }
     return (
