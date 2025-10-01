@@ -1,0 +1,36 @@
+Image is missing required &quot;src&quot; property: 
+<img width="20" height="20" decoding="async" data-nimg="1" style="color: transparent;"></img>
+
+Image is missing required "alt" property. Please add Alternative Text to describe the image for screen readers and search engines.
+Image is missing required &quot;src&quot; property: 
+<img width="20" height="20" decoding="async" data-nimg="1" style="color: transparent;"></img>
+
+Image is missing required "alt" property. Please add Alternative Text to describe the image for screen readers and search engines.
+Image is missing required &quot;src&quot; property: 
+<img width="20" height="20" decoding="async" data-nimg="1" style="color: transparent;"></img>
+
+Image is missing required "alt" property. Please add Alternative Text to describe the image for screen readers and search engines.
+Image is missing required &quot;src&quot; property: 
+<img width="20" height="20" decoding="async" data-nimg="1" style="color: transparent;"></img>
+
+Image is missing required "alt" property. Please add Alternative Text to describe the image for screen readers and search engines.
+Image is missing required &quot;src&quot; property: 
+<img width="20" height="20" decoding="async" data-nimg="1" style="color: transparent;"></img>
+
+Image is missing required "alt" property. Please add Alternative Text to describe the image for screen readers and search engines.
+Image is missing required &quot;src&quot; property: 
+<img width="20" height="20" decoding="async" data-nimg="1" style="color: transparent;"></img>
+
+Image is missing required "alt" property. Please add Alternative Text to describe the image for screen readers and search engines.
+[Fast Refresh] done in 695ms
+Object {success: true, message: "Search completed. AI response generation is currently unavailable.", error: "Inngest API Error: 401 Event key not found"}
+error: "Inngest API Error: 401 Event key not found"
+message: "Search completed. AI response generation is currently unavailable."
+success: true
+[[Prototype]]: Object
+AI response generation unavailable: Search completed. AI response generation is currently unavailable.
+Object {success: true, message: "Search completed. AI response generation is currently unavailable.", error: "Inngest API Error: 401 Event key not found"}
+error: "Inngest API Error: 401 Event key not found"
+message: "Search completed. AI response generation is currently unavailable."
+success: true
+[[Prototype]]: Object
