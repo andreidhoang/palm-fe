@@ -45,7 +45,7 @@ function DisplayResult({ searchInputRecord }) {
                 title: item?.title,
                 description: item?.description,
                 long_name: item?.profile?.long_name,
-                img: item?.profile.img,
+                img: item?.profile?.img,
                 url: item?.url,
                 thumbnail: item?.thumbnail?.src,
                 original: item?.thumbnail?.original
