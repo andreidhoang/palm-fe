@@ -3,11 +3,11 @@
 ## Overview
 A full-stack Next.js 15 application that clones Perplexity AI functionality. This project uses:
 - **Frontend**: Next.js 15 with App Router and React 18
-- **Authentication**: Clerk for user authentication
+- **Authentication**: Clerk for user authentication (optional - supports guest mode)
 - **Database**: Supabase (PostgreSQL)
 - **Background Jobs**: Inngest for async task processing
 - **AI**: Google Gemini API for content generation
-- **Search**: Brave Search API for web search functionality
+- **Search**: Tavily API for AI-optimized web search (better than traditional search APIs for LLM applications)
 
 ## Project Structure
 - `/app` - Next.js App Router pages and API routes

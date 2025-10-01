@@ -21,6 +21,7 @@ export async function POST(req) {
     try {
         // Call Tavily API
         const result = await axios.post('https://api.tavily.com/search', {
+            api_key: process.env.TAVILY_API_KEY,
             query: searchInput,
             max_results: 8,
             search_depth: searchType === 'research' ? 'advanced' : 'basic',
@@ -31,9 +32,6 @@ export async function POST(req) {
             headers: {
                 'Content-Type': 'application/json',
                 'Accept': 'application/json'
-            },
-            params: {
-                api_key: process.env.TAVILY_API_KEY
             }
         });
 
