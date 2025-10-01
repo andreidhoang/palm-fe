@@ -174,47 +174,55 @@ export async function POST(req) {
                     }
                 }
 
-                // Send citations and images
-                if (citations.length > 0) {
+                // Send citations and images (wrapped in try-catch for client disconnect)
+                try {
+                    if (citations.length > 0) {
+                        controller.enqueue(
+                            encoder.encode(`data: ${JSON.stringify({ 
+                                type: 'citations',
+                                citations: citations 
+                            })}\n\n`)
+                        );
+                    }
+
+                    if (images.length > 0) {
+                        controller.enqueue(
+                            encoder.encode(`data: ${JSON.stringify({ 
+                                type: 'images',
+                                images: images 
+                            })}\n\n`)
+                        );
+                    }
+
+                    // Send completion signal with full data
                     controller.enqueue(
                         encoder.encode(`data: ${JSON.stringify({ 
-                            type: 'citations',
-                            citations: citations 
+                            type: 'done',
+                            fullText,
+                            citations,
+                            images,
+                            recordId
                         })}\n\n`)
                     );
+                    
+                    controller.close();
+                } catch (closeError) {
+                    // Client disconnected - this is expected, no need to log
                 }
-
-                if (images.length > 0) {
-                    controller.enqueue(
-                        encoder.encode(`data: ${JSON.stringify({ 
-                            type: 'images',
-                            images: images 
-                        })}\n\n`)
-                    );
-                }
-
-                // Send completion signal with full data
-                controller.enqueue(
-                    encoder.encode(`data: ${JSON.stringify({ 
-                        type: 'done',
-                        fullText,
-                        citations,
-                        images,
-                        recordId
-                    })}\n\n`)
-                );
-                
-                controller.close();
 
             } catch (error) {
                 console.error('Perplexity streaming error:', error);
-                controller.enqueue(
-                    encoder.encode(`data: ${JSON.stringify({ 
-                        type: 'error',
-                        error: error.message 
-                    })}\n\n`)
-                );
-                controller.close();
+                try {
+                    controller.enqueue(
+                        encoder.encode(`data: ${JSON.stringify({ 
+                            type: 'error',
+                            error: error.message 
+                        })}\n\n`)
+                    );
+                    controller.close();
+                } catch (closeError) {
+                    // Client disconnected - this is expected
+                }
             }
         },
     });

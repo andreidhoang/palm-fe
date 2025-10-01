@@ -72,6 +72,14 @@ The application uses three main Supabase tables:
 - `created_at` - Timestamp of response creation
 
 ## Recent Changes
+- 2025-10-01: **Fixed answer display and streaming errors**
+  - Fixed "No search input provided" error on initial page load by properly handling empty strings with `.trim()`
+  - Changed validation from `??` operator to `(userInput && userInput.trim()) || fallback` to handle empty strings correctly
+  - Added missing `userEmail` field to Chat record creation with `guest@example.com` fallback
+  - Removed non-existent `images` field from database updates (Chats table only has `aiResp` and `searchResult`)
+  - Added `GetSearchRecords()` call after database update to refresh UI state with new answer
+  - Fixed "Controller is already closed" streaming error by wrapping final enqueue/close calls in try-catch
+  - Removed all debug console.log statements, keeping only console.error/warn for error reporting
 - 2025-10-01: **Fixed Perplexity API error** - Resolved "Bad Request" error caused by race condition
   - Fixed race condition where userInput was cleared before being passed to API
   - Added input validation to prevent empty search queries
