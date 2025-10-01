@@ -13,6 +13,13 @@ export async function POST(req) {
         );
     }
 
+    if (!searchInput || typeof searchInput !== 'string' || searchInput.trim() === '') {
+        return NextResponse.json(
+            { error: 'Search input is required and must be a non-empty string' },
+            { status: 400 }
+        );
+    }
+
     const encoder = new TextEncoder();
     const stream = new ReadableStream({
         async start(controller) {

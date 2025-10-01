@@ -72,6 +72,11 @@ The application uses three main Supabase tables:
 - `created_at` - Timestamp of response creation
 
 ## Recent Changes
+- 2025-10-01: **Fixed Perplexity API error** - Resolved "Bad Request" error caused by race condition
+  - Fixed race condition where userInput was cleared before being passed to API
+  - Added input validation to prevent empty search queries
+  - Added server-side validation in API route to reject invalid requests
+  - All streaming functionality now working correctly
 - 2025-10-01: **Removed redundant APIs** - Cleaned up codebase by removing obsolete Tavily, Inngest, and Gemini integrations
   - Deleted `/api/brave-search-api`, `/api/llm-model`, `/api/inngest`, `/api/get-inngest-status`, `/api/llm-stream` routes
   - Removed `inngest/` directory and all Inngest workflow code

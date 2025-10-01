@@ -45,6 +45,15 @@ function DisplayResult({ searchInputRecord }) {
     const GetSearchApiResult = async () => {
         setLoadingSearch(true);
         
+        // Capture the search input before clearing
+        const searchQuery = userInput ?? searchInputRecord?.searchInput;
+        
+        if (!searchQuery) {
+            console.error('No search input provided');
+            setLoadingSearch(false);
+            return;
+        }
+        
         // Create initial chat record
         const { data, error } = await supabase
             .from('Chats')
@@ -52,7 +61,7 @@ function DisplayResult({ searchInputRecord }) {
                 {
                     libId: libId,
                     searchResult: [],
-                    userSearchInput: userInput ?? searchInputRecord?.searchInput
+                    userSearchInput: searchQuery
                 },
             ])
             .select()
@@ -68,7 +77,7 @@ function DisplayResult({ searchInputRecord }) {
         setLoadingSearch(false);
         
         // Start Perplexity streaming (handles both search and answer)
-        await StreamPerplexitySearch(userInput ?? searchInputRecord?.searchInput, data[0].id)
+        await StreamPerplexitySearch(searchQuery, data[0].id)
     }
 
     const StreamPerplexitySearch = async (searchInput, recordId) => {
