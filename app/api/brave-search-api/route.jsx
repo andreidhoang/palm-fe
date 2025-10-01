@@ -11,27 +11,54 @@ export async function POST(req) {
         )
     }
 
-    if (!process.env.BRAVE_API_KEY) {
+    if (!process.env.TAVILY_API_KEY) {
         return NextResponse.json({ 
-            error: 'Brave Search API key is not configured. Please add BRAVE_API_KEY to your environment variables.',
+            error: 'Tavily API key is not configured. Please add TAVILY_API_KEY to your environment variables.',
             web: { results: [] }
         }, { status: 503 })
     }
 
     try {
-        const encodedQuery = encodeURIComponent(searchInput);
-        const result = await axios.get(`https://api.search.brave.com/res/v1/web/search?q=${encodedQuery}&count=8`, {
+        // Call Tavily API
+        const result = await axios.post('https://api.tavily.com/search', {
+            query: searchInput,
+            max_results: 8,
+            search_depth: searchType === 'research' ? 'advanced' : 'basic',
+            include_answer: true,
+            include_images: true,
+            include_raw_content: false
+        }, {
             headers: {
-                'Accept': 'application/json',
-                'Accept-Encoding': 'gzip',
-                'X-Subscription-Token': process.env.BRAVE_API_KEY
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            params: {
+                api_key: process.env.TAVILY_API_KEY
             }
         });
 
-        console.log(result.data);
-        return NextResponse.json(result.data)
+        // Transform Tavily response to match Brave format for compatibility
+        const tavilyData = result.data;
+        const transformedResponse = {
+            web: {
+                results: tavilyData.results?.map(item => ({
+                    title: item.title,
+                    url: item.url,
+                    description: item.content,
+                    thumbnail: {
+                        src: item.thumbnail,
+                        original: item.thumbnail
+                    }
+                })) || []
+            },
+            answer: tavilyData.answer,
+            images: tavilyData.images
+        };
+
+        console.log('Tavily search results:', transformedResponse);
+        return NextResponse.json(transformedResponse)
     } catch (error) {
-        console.error('Brave Search API error:', error.message);
+        console.error('Tavily Search API error:', error.message);
         console.error('Error details:', error.response?.data);
         return NextResponse.json({ 
             error: 'Failed to fetch search results: ' + error.message,
