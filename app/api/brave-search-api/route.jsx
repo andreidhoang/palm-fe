@@ -19,7 +19,8 @@ export async function POST(req) {
     }
 
     try {
-        const result = await axios.get('https://api.search.brave.com/res/v1/web/search?q=' + searchInput + '&count=8', {
+        const encodedQuery = encodeURIComponent(searchInput);
+        const result = await axios.get(`https://api.search.brave.com/res/v1/web/search?q=${encodedQuery}&count=8`, {
             headers: {
                 'Accept': 'application/json',
                 'Accept-Encoding': 'gzip',
@@ -31,8 +32,10 @@ export async function POST(req) {
         return NextResponse.json(result.data)
     } catch (error) {
         console.error('Brave Search API error:', error.message);
+        console.error('Error details:', error.response?.data);
         return NextResponse.json({ 
             error: 'Failed to fetch search results: ' + error.message,
+            details: error.response?.data,
             web: { results: [] }
         }, { status: 502 })
     }
