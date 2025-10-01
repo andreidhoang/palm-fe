@@ -30,7 +30,6 @@ function DisplayResult({ searchInputRecord }) {
         // Update this method
         searchInputRecord?.Chats?.length == 0 ? GetSearchApiResult() : GetSearchRecords();
         setSearchResult(searchInputRecord)
-        console.log(searchInputRecord);
     }, [searchInputRecord])
 
     // Cleanup streaming on unmount
@@ -45,23 +44,24 @@ function DisplayResult({ searchInputRecord }) {
     const GetSearchApiResult = async () => {
         setLoadingSearch(true);
         
-        // Capture the search input before clearing
-        const searchQuery = userInput ?? searchInputRecord?.searchInput;
+        // Capture the search input before clearing (handle empty strings properly)
+        const searchQuery = (userInput && userInput.trim()) || searchInputRecord?.searchInput;
         
-        if (!searchQuery) {
+        if (!searchQuery || !searchQuery.trim()) {
             console.error('No search input provided');
             setLoadingSearch(false);
             return;
         }
         
         // Create initial chat record
-        const { data, error } = await supabase
+        const { data, error} = await supabase
             .from('Chats')
             .insert([
                 {
                     libId: libId,
                     searchResult: [],
-                    userSearchInput: searchQuery
+                    userSearchInput: searchQuery,
+                    userEmail: searchInputRecord?.userEmail || 'guest@example.com'
                 },
             ])
             .select()
@@ -150,7 +150,6 @@ function DisplayResult({ searchInputRecord }) {
                                 
                                 if (data.type === 'citations') {
                                     citations = data.citations;
-                                    console.log('Received citations:', citations);
                                     
                                     // Transform citations to match component expectations
                                     const formattedCitations = citations.map(citation => ({
@@ -159,8 +158,6 @@ function DisplayResult({ searchInputRecord }) {
                                         long_name: citation?.title || new URL(citation?.url || citation).hostname,
                                         img: `https://www.google.com/s2/favicons?domain=${new URL(citation?.url || citation).hostname}&sz=128`
                                     }));
-                                    
-                                    console.log('Formatted citations:', formattedCitations);
                                     
                                     // Update with citations
                                     setSearchResult(prev => {
@@ -179,15 +176,12 @@ function DisplayResult({ searchInputRecord }) {
 
                                 if (data.type === 'images') {
                                     images = data.images;
-                                    console.log('Received images:', images);
                                     
                                     // Transform images to match component expectations
                                     const formattedImages = images.map(image => ({
                                         original: typeof image === 'string' ? image : image?.url,
                                         title: typeof image === 'string' ? 'Image' : image?.description || 'Image'
                                     }));
-                                    
-                                    console.log('Formatted images:', formattedImages);
                                     
                                     // Update with images - add to searchResult for Images tab
                                     setSearchResult(prev => {
@@ -211,17 +205,22 @@ function DisplayResult({ searchInputRecord }) {
                                 }
                                 
                                 if (data.type === 'done') {
-                                    console.log('Perplexity streaming complete!');
                                     // Save final data to database
                                     if (data.fullText) {
-                                        await supabase
+                                        const { error: updateError } = await supabase
                                             .from('Chats')
                                             .update({
                                                 aiResp: data.fullText,
-                                                searchResult: data.citations || [],
-                                                images: data.images || []
+                                                searchResult: data.citations || []
                                             })
                                             .eq('id', recordId);
+                                        
+                                        if (updateError) {
+                                            console.error('Database update error:', updateError);
+                                        } else {
+                                            // Refresh the data to show the updated answer
+                                            await GetSearchRecords();
+                                        }
                                     }
                                 }
                                 
