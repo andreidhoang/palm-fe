@@ -72,27 +72,40 @@ function DisplayResult({ searchInputRecord }) {
     }
 
     const GenerateAIResp = async (formattedSearchResp, recordId) => {
-        const result = await axios.post('/api/llm-model', {
-            searchInput: searchInputRecord?.searchInput,
-            searchResult: formattedSearchResp,
-            recordId: recordId
-        });
-
-        console.log(result.data);
-        const runId = result.data
-
-        const interval = setInterval(async () => {
-            const runResp = await axios.post('/api/get-inngest-status', {
-                runId: runId
+        try {
+            const result = await axios.post('/api/llm-model', {
+                searchInput: searchInputRecord?.searchInput,
+                searchResult: formattedSearchResp,
+                recordId: recordId
             });
 
-            if (runResp?.data?.data[0]?.status == 'Completed') {
-                console.log('Completd!!!')
-                await GetSearchRecords();
-                clearInterval(interval);
-                // Get Updated Data from DB
+            console.log(result.data);
+            const runId = result.data;
+
+            // Check if Inngest is working (runId should be a string, not an object)
+            if (typeof runId === 'string') {
+                const interval = setInterval(async () => {
+                    try {
+                        const runResp = await axios.post('/api/get-inngest-status', {
+                            runId: runId
+                        });
+
+                        if (runResp?.data?.data?.[0]?.status == 'Completed') {
+                            console.log('Completed!!!')
+                            await GetSearchRecords();
+                            clearInterval(interval);
+                        }
+                    } catch (error) {
+                        console.error('Error checking Inngest status:', error);
+                        clearInterval(interval);
+                    }
+                }, 1000);
+            } else {
+                console.log('AI response generation unavailable:', runId.message);
             }
-        }, 1000)
+        } catch (error) {
+            console.error('Error generating AI response:', error);
+        }
     }
 
     const GetSearchRecords = async () => {
@@ -125,7 +138,7 @@ function DisplayResult({ searchInputRecord }) {
                 </div>}
             {searchResult?.Chats?.map((chat, index) => (
                 <div key={index} className='mt-7'>
-                    <h2 className='font-bold text-4xl text-gray-600'>{index == 0 ? chat?.userSearchInput : chat?.searchResult[0].title}</h2>
+                    <h2 className='font-bold text-4xl text-gray-600'>{index == 0 ? chat?.userSearchInput : chat?.searchResult?.[0]?.title || 'Search Result'}</h2>
                     <div className="flex items-center space-x-6 border-b border-gray-200 pb-2 mt-6">
                         {tabs.map(({ label, icon: Icon, badge }) => (
                             <button
