@@ -104,6 +104,11 @@ function DisplaySummery({ aiResp, citations = [] }) {
                             {processChildren(children)}
                         </ul>
                     ),
+                    ol: ({ node, children, ordered, ...props }) => (
+                        <ol className="list-decimal list-inside space-y-2 leading-relaxed" {...props}>
+                            {processChildren(children)}
+                        </ol>
+                    ),
                     li: ({ node, children, ...props }) => (
                         <li className="mb-1" {...props}>
                             {processChildren(children)}

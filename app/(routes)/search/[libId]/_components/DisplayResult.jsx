@@ -77,7 +77,14 @@ function DisplayResult({ searchInputRecord }) {
         setLoadingSearch(false);
         
         // Start Perplexity streaming (handles both search and answer)
-        await StreamPerplexitySearch(searchQuery, data[0].id)
+        try {
+            await StreamPerplexitySearch(searchQuery, data[0].id)
+        } catch (error) {
+            // Silently handle abort errors (expected when navigating away)
+            if (error.name !== 'AbortError') {
+                console.error('Error during streaming:', error);
+            }
+        }
     }
 
     const StreamPerplexitySearch = async (searchInput, recordId) => {
