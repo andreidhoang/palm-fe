@@ -73,35 +73,64 @@ function DisplayResult({ searchInputRecord }) {
 
     const GenerateAIResp = async (formattedSearchResp, recordId) => {
         try {
-            const result = await axios.post('/api/llm-model', {
-                searchInput: searchInputRecord?.searchInput,
-                searchResult: formattedSearchResp,
-                recordId: recordId
+            const response = await fetch('/api/llm-stream', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    searchInput: searchInputRecord?.searchInput,
+                    searchResult: formattedSearchResp,
+                    recordId: recordId
+                }),
             });
 
-            console.log(result.data);
-            const runId = result.data;
+            if (!response.ok) {
+                console.error('Streaming API error:', response.statusText);
+                return;
+            }
 
-            // Check if Inngest is working (runId should be a string, not an object)
-            if (typeof runId === 'string') {
-                const interval = setInterval(async () => {
-                    try {
-                        const runResp = await axios.post('/api/get-inngest-status', {
-                            runId: runId
-                        });
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let accumulatedText = '';
 
-                        if (runResp?.data?.data?.[0]?.status == 'Completed') {
-                            console.log('Completed!!!')
-                            await GetSearchRecords();
-                            clearInterval(interval);
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value);
+                const lines = chunk.split('\n');
+
+                for (const line of lines) {
+                    if (line.startsWith('data: ')) {
+                        const data = JSON.parse(line.slice(6));
+                        
+                        if (data.text) {
+                            accumulatedText += data.text;
+                            // Update the search result with streaming text
+                            setSearchResult(prev => {
+                                if (!prev?.Chats?.[0]) return prev;
+                                const updatedChats = [...prev.Chats];
+                                updatedChats[0] = {
+                                    ...updatedChats[0],
+                                    aiResp: accumulatedText
+                                };
+                                return {
+                                    ...prev,
+                                    Chats: updatedChats
+                                };
+                            });
                         }
-                    } catch (error) {
-                        console.error('Error checking Inngest status:', error);
-                        clearInterval(interval);
+                        
+                        if (data.done) {
+                            console.log('Streaming complete!');
+                        }
+                        
+                        if (data.error) {
+                            console.error('Streaming error:', data.error);
+                        }
                     }
-                }, 1000);
-            } else {
-                console.log('AI response generation unavailable:', runId.message);
+                }
             }
         } catch (error) {
             console.error('Error generating AI response:', error);
