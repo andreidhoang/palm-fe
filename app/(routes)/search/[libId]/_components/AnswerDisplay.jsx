@@ -8,7 +8,7 @@ function AnswerDisplay({ chat, loadingSearch }) {
     return (
         <div>
             <SourceList webResult={chat?.searchResult} loadingSearch={loadingSearch} />
-            <DisplaySummery aiResp={chat?.aiResp} />
+            <DisplaySummery aiResp={chat?.aiResp} citations={chat?.searchResult || chat?.citations} />
         </div>
     )
 }
