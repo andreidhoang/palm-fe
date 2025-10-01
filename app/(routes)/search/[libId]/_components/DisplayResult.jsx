@@ -23,7 +23,7 @@ function DisplayResult({ searchInputRecord }) {
     const [searchResult, setSearchResult] = useState(searchInputRecord);
     const { libId } = useParams();
     const [loadingSearch, setLoadingSearch] = useState(false);
-    const [userInput, setUserInput] = useState();
+    const [userInput, setUserInput] = useState('');
     const streamAbortControllerRef = useRef(null);
     
     useEffect(() => {
@@ -235,11 +235,15 @@ function DisplayResult({ searchInputRecord }) {
                     }
                 }
             } finally {
-                reader.cancel();
+                try {
+                    reader.cancel();
+                } catch (cancelError) {
+                    // Ignore errors from cancelling the reader
+                }
             }
         } catch (error) {
             if (error.name === 'AbortError') {
-                console.log('Streaming cancelled');
+                // Silent - this is expected when navigation or cancellation happens
             } else {
                 console.error('Error with Perplexity search:', error);
             }
