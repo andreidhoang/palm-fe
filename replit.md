@@ -78,8 +78,13 @@ The application uses three main Supabase tables:
 - `created_at` - Timestamp of response creation
 
 ## Recent Changes
+- 2025-10-01: **Implemented real-time streaming AI responses** - Replaced background job processing with Server-Sent Events (SSE) streaming for word-by-word answer display like Perplexity
+  - Created `/api/llm-stream` endpoint using Google Gemini's streaming API
+  - Robust SSE parsing with proper buffering and error handling
+  - AbortController for request cancellation (prevents memory leaks)
+  - Fixed duplicate answer sections - now displays only the most recent chat
 - 2025-10-01: Replaced Brave Search API with Tavily API for better AI-optimized search results
-- 2025-10-01: Set up Inngest Dev Server workflow for local AI response generation
+- 2025-10-01: Set up Inngest Dev Server workflow for local AI response generation (now optional, streaming is primary method)
 - 2025-10-01: Added graceful error handling for missing API keys and services
 - 2025-09-30: Initial Replit setup, configured Next.js for Replit proxy, set up workflow
 - 2025-09-30: Implemented comprehensive error handling across all layers (middleware, API routes, database, background jobs)

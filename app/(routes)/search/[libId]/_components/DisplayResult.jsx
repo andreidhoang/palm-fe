@@ -1,5 +1,5 @@
 import { Loader2Icon, LucideImage, LucideList, LucideSparkles, LucideVideo, Send } from 'lucide-react';
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useState, useRef } from 'react'
 import AnswerDisplay from './AnswerDisplay';
 import axios from 'axios';
 import { SEARCH_RESULT } from '@/services/Shared';
@@ -24,12 +24,23 @@ function DisplayResult({ searchInputRecord }) {
     const { libId } = useParams();
     const [loadingSearch, setLoadingSearch] = useState(false);
     const [userInput, setUserInput] = useState();
+    const streamAbortControllerRef = useRef(null);
+    
     useEffect(() => {
         // Update this method
         searchInputRecord?.Chats?.length == 0 ? GetSearchApiResult() : GetSearchRecords();
         setSearchResult(searchInputRecord)
         console.log(searchInputRecord);
     }, [searchInputRecord])
+
+    // Cleanup streaming on unmount
+    useEffect(() => {
+        return () => {
+            if (streamAbortControllerRef.current) {
+                streamAbortControllerRef.current.abort();
+            }
+        };
+    }, [])
 
     const GetSearchApiResult = async () => {
         setLoadingSearch(true);
@@ -72,6 +83,14 @@ function DisplayResult({ searchInputRecord }) {
     }
 
     const GenerateAIResp = async (formattedSearchResp, recordId) => {
+        // Cancel any previous streaming request
+        if (streamAbortControllerRef.current) {
+            streamAbortControllerRef.current.abort();
+        }
+
+        const abortController = new AbortController();
+        streamAbortControllerRef.current = abortController;
+
         try {
             const response = await fetch('/api/llm-stream', {
                 method: 'POST',
@@ -83,6 +102,7 @@ function DisplayResult({ searchInputRecord }) {
                     searchResult: formattedSearchResp,
                     recordId: recordId
                 }),
+                signal: abortController.signal,
             });
 
             if (!response.ok) {
@@ -93,47 +113,68 @@ function DisplayResult({ searchInputRecord }) {
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let accumulatedText = '';
+            let buffer = '';
 
-            while (true) {
-                const { done, value } = await reader.read();
-                if (done) break;
+            try {
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
 
-                const chunk = decoder.decode(value);
-                const lines = chunk.split('\n');
+                    buffer += decoder.decode(value, { stream: true });
+                    
+                    // Split by \n\n to get complete SSE events
+                    const events = buffer.split('\n\n');
+                    // Keep the last incomplete event in the buffer
+                    buffer = events.pop() || '';
 
-                for (const line of lines) {
-                    if (line.startsWith('data: ')) {
-                        const data = JSON.parse(line.slice(6));
-                        
-                        if (data.text) {
-                            accumulatedText += data.text;
-                            // Update the search result with streaming text
-                            setSearchResult(prev => {
-                                if (!prev?.Chats?.[0]) return prev;
-                                const updatedChats = [...prev.Chats];
-                                updatedChats[0] = {
-                                    ...updatedChats[0],
-                                    aiResp: accumulatedText
-                                };
-                                return {
-                                    ...prev,
-                                    Chats: updatedChats
-                                };
-                            });
-                        }
-                        
-                        if (data.done) {
-                            console.log('Streaming complete!');
-                        }
-                        
-                        if (data.error) {
-                            console.error('Streaming error:', data.error);
+                    for (const event of events) {
+                        if (event.startsWith('data: ')) {
+                            try {
+                                const data = JSON.parse(event.slice(6));
+                                
+                                if (data.text) {
+                                    accumulatedText += data.text;
+                                    // Update the chat by recordId to avoid race conditions
+                                    setSearchResult(prev => {
+                                        if (!prev?.Chats || prev.Chats.length === 0) return prev;
+                                        const updatedChats = prev.Chats.map(chat => 
+                                            chat.id === recordId 
+                                                ? { ...chat, aiResp: accumulatedText }
+                                                : chat
+                                        );
+                                        return {
+                                            ...prev,
+                                            Chats: updatedChats
+                                        };
+                                    });
+                                }
+                                
+                                if (data.done) {
+                                    console.log('Streaming complete!');
+                                }
+                                
+                                if (data.error) {
+                                    console.error('Streaming error:', data.error);
+                                }
+                            } catch (parseError) {
+                                console.error('Error parsing SSE event:', parseError);
+                            }
                         }
                     }
                 }
+            } finally {
+                reader.cancel();
             }
         } catch (error) {
-            console.error('Error generating AI response:', error);
+            if (error.name === 'AbortError') {
+                console.log('Streaming cancelled');
+            } else {
+                console.error('Error generating AI response:', error);
+            }
+        } finally {
+            if (streamAbortControllerRef.current === abortController) {
+                streamAbortControllerRef.current = null;
+            }
         }
     }
 
@@ -165,46 +206,50 @@ function DisplayResult({ searchInputRecord }) {
                     <div className='w-[70%] mt-2 h-5 bg-accent animate-pulse rounded-md'></div>
 
                 </div>}
-            {searchResult?.Chats?.map((chat, index) => (
-                <div key={index} className='mt-7'>
-                    <h2 className='font-bold text-4xl text-gray-600'>{index == 0 ? chat?.userSearchInput : chat?.searchResult?.[0]?.title || 'Search Result'}</h2>
-                    <div className="flex items-center space-x-6 border-b border-gray-200 pb-2 mt-6">
-                        {tabs.map(({ label, icon: Icon, badge }) => (
-                            <button
-                                key={label}
-                                onClick={() => setActiveTab(label)}
-                                className={`flex items-center gap-1 relative text-sm font-medium text-gray-700 hover:text-black ${activeTab === label ? 'text-black' : ''
-                                    }`}
-                            >
-                                <Icon className="w-4 h-4" />
-                                <span>{label}</span>
-                                {badge && (
-                                    <span className="ml-1 text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                                        {badge}
-                                    </span>
-                                )}
-                                {activeTab === label && (
-                                    <span className="absolute -bottom-2 left-0 w-full h-0.5 bg-black rounded"></span>
-                                )}
-                            </button>
-                        ))}
-                        <div className="ml-auto text-sm text-gray-500">
-                            1 task <span className="ml-1">↗</span>
+            {searchResult?.Chats && searchResult.Chats.length > 0 && (() => {
+                // Only show the most recent chat
+                const chat = searchResult.Chats[searchResult.Chats.length - 1];
+                return (
+                    <div className='mt-7'>
+                        <h2 className='font-bold text-4xl text-gray-600'>{chat?.userSearchInput || searchResult?.searchInput}</h2>
+                        <div className="flex items-center space-x-6 border-b border-gray-200 pb-2 mt-6">
+                            {tabs.map(({ label, icon: Icon, badge }) => (
+                                <button
+                                    key={label}
+                                    onClick={() => setActiveTab(label)}
+                                    className={`flex items-center gap-1 relative text-sm font-medium text-gray-700 hover:text-black ${activeTab === label ? 'text-black' : ''
+                                        }`}
+                                >
+                                    <Icon className="w-4 h-4" />
+                                    <span>{label}</span>
+                                    {badge && (
+                                        <span className="ml-1 text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                            {badge}
+                                        </span>
+                                    )}
+                                    {activeTab === label && (
+                                        <span className="absolute -bottom-2 left-0 w-full h-0.5 bg-black rounded"></span>
+                                    )}
+                                </button>
+                            ))}
+                            <div className="ml-auto text-sm text-gray-500">
+                                1 task <span className="ml-1">↗</span>
+                            </div>
                         </div>
-                    </div>
 
-                    <div>
-                        {activeTab == 'Answer' ?
-                            <AnswerDisplay chat={chat} loadingSearch={loadingSearch} /> :
-                            activeTab == 'Images' ? <ImageListTab chat={chat} />
-                                : activeTab == 'Sources' ?
-                                    <SourceListTab chat={chat} /> : null
-                        }
-                    </div>
-                    <hr className='my-5' />
+                        <div>
+                            {activeTab == 'Answer' ?
+                                <AnswerDisplay chat={chat} loadingSearch={loadingSearch} /> :
+                                activeTab == 'Images' ? <ImageListTab chat={chat} />
+                                    : activeTab == 'Sources' ?
+                                        <SourceListTab chat={chat} /> : null
+                            }
+                        </div>
+                        <hr className='my-5' />
 
-                </div>
-            ))}
+                    </div>
+                );
+            })()}
             <div className='h-[200px]'>
             </div>
             <div className='bg-white w-full border rounded-lg 
