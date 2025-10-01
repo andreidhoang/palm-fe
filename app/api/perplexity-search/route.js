@@ -141,15 +141,7 @@ export async function POST(req) {
                                     
                                     // Extract any final content
                                     if (parsed.choices?.[0]?.delta?.content) {
-                                        const content = parsed.choices[0].delta.content;
-                                        fullText += content;
-                                        
-                                        controller.enqueue(
-                                            encoder.encode(`data: ${JSON.stringify({ 
-                                                type: 'content',
-                                                text: content 
-                                            })}\n\n`)
-                                        );
+                                        fullText += parsed.choices[0].delta.content;
                                     }
 
                                     // Extract final citations and images

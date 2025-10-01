@@ -141,12 +141,24 @@ function DisplayResult({ searchInputRecord }) {
                                 
                                 if (data.type === 'citations') {
                                     citations = data.citations;
+                                    console.log('Received citations:', citations);
+                                    
+                                    // Transform citations to match component expectations
+                                    const formattedCitations = citations.map(citation => ({
+                                        url: citation?.url || citation,
+                                        title: citation?.title || citation?.url || citation,
+                                        long_name: citation?.title || new URL(citation?.url || citation).hostname,
+                                        img: `https://www.google.com/s2/favicons?domain=${new URL(citation?.url || citation).hostname}&sz=128`
+                                    }));
+                                    
+                                    console.log('Formatted citations:', formattedCitations);
+                                    
                                     // Update with citations
                                     setSearchResult(prev => {
                                         if (!prev?.Chats || prev.Chats.length === 0) return prev;
                                         const updatedChats = prev.Chats.map(chat => 
                                             chat.id === recordId 
-                                                ? { ...chat, citations, searchResult: citations }
+                                                ? { ...chat, citations, searchResult: formattedCitations }
                                                 : chat
                                         );
                                         return {
@@ -158,14 +170,30 @@ function DisplayResult({ searchInputRecord }) {
 
                                 if (data.type === 'images') {
                                     images = data.images;
-                                    // Update with images
+                                    console.log('Received images:', images);
+                                    
+                                    // Transform images to match component expectations
+                                    const formattedImages = images.map(image => ({
+                                        original: typeof image === 'string' ? image : image?.url,
+                                        title: typeof image === 'string' ? 'Image' : image?.description || 'Image'
+                                    }));
+                                    
+                                    console.log('Formatted images:', formattedImages);
+                                    
+                                    // Update with images - add to searchResult for Images tab
                                     setSearchResult(prev => {
                                         if (!prev?.Chats || prev.Chats.length === 0) return prev;
-                                        const updatedChats = prev.Chats.map(chat => 
-                                            chat.id === recordId 
-                                                ? { ...chat, images }
-                                                : chat
-                                        );
+                                        const updatedChats = prev.Chats.map(chat => {
+                                            if (chat.id === recordId) {
+                                                // Merge formatted images with existing searchResult
+                                                return { 
+                                                    ...chat, 
+                                                    images: formattedImages,
+                                                    searchResult: chat.searchResult || []
+                                                };
+                                            }
+                                            return chat;
+                                        });
                                         return {
                                             ...prev,
                                             Chats: updatedChats
