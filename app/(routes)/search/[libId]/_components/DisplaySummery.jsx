@@ -44,6 +44,22 @@ function DisplaySummery({ aiResp, citations = [] }) {
         return parts.length > 0 ? parts : text;
     };
 
+    // Process all text children recursively
+    const processChildren = (children) => {
+        if (typeof children === 'string') {
+            return renderTextWithCitations(children);
+        }
+        if (Array.isArray(children)) {
+            return children.map((child, i) => {
+                if (typeof child === 'string') {
+                    return <React.Fragment key={i}>{renderTextWithCitations(child)}</React.Fragment>;
+                }
+                return child;
+            });
+        }
+        return children;
+    };
+
     return (
         <div className='mt-7'>
             {!aiResp &&
@@ -55,34 +71,26 @@ function DisplaySummery({ aiResp, citations = [] }) {
                 </div>}
             <ReactMarkdown
                 components={{
-                    h1: ({ node, ...props }) => (
-                        <h1 className="text-4xl font-bold text-gray-600 mb-4 leading-snug" {...props} />
+                    h1: ({ node, children, ...props }) => (
+                        <h1 className="text-4xl font-bold text-gray-600 mb-4 leading-snug" {...props}>
+                            {processChildren(children)}
+                        </h1>
                     ),
-                    h2: ({ node, ...props }) => (
-                        <h2 className="text-3xl font-semibold text-gray-600 mb-3 leading-snug" {...props} />
+                    h2: ({ node, children, ...props }) => (
+                        <h2 className="text-3xl font-semibold text-gray-600 mb-3 leading-snug" {...props}>
+                            {processChildren(children)}
+                        </h2>
                     ),
-                    h3: ({ node, ...props }) => (
-                        <h3 className="text-2xl font-semibold text-gray-600 mt-4 mb-2 leading-tight" {...props} />
+                    h3: ({ node, children, ...props }) => (
+                        <h3 className="text-2xl font-semibold text-gray-600 mt-4 mb-2 leading-tight" {...props}>
+                            {processChildren(children)}
+                        </h3>
                     ),
-                    p: ({ node, children, ...props }) => {
-                        const processChildren = (children) => {
-                            if (typeof children === 'string') {
-                                return renderTextWithCitations(children);
-                            }
-                            if (Array.isArray(children)) {
-                                return children.map((child, i) => 
-                                    typeof child === 'string' ? renderTextWithCitations(child) : child
-                                );
-                            }
-                            return children;
-                        };
-                        
-                        return (
-                            <p className="text-gray-700 leading-relaxed mb-4" {...props}>
-                                {processChildren(children)}
-                            </p>
-                        );
-                    },
+                    p: ({ node, children, ...props }) => (
+                        <p className="text-gray-700 leading-relaxed mb-4" {...props}>
+                            {processChildren(children)}
+                        </p>
+                    ),
                     a: ({ node, ...props }) => (
                         <a
                             className="text-blue-800 underline hover:text-gray-600"
@@ -91,14 +99,20 @@ function DisplaySummery({ aiResp, citations = [] }) {
                             {...props}
                         />
                     ),
-                    ul: ({ node, ...props }) => (
-                        <ul className="list-disc list-inside space-y-2 leading-relaxed" {...props} />
+                    ul: ({ node, children, ...props }) => (
+                        <ul className="list-disc list-inside space-y-2 leading-relaxed" {...props}>
+                            {processChildren(children)}
+                        </ul>
                     ),
-                    li: ({ node, ...props }) => (
-                        <li className="mb-1" {...props} />
+                    li: ({ node, children, ...props }) => (
+                        <li className="mb-1" {...props}>
+                            {processChildren(children)}
+                        </li>
                     ),
-                    blockquote: ({ node, ...props }) => (
-                        <blockquote className="bg-gray-100 p-4 rounded-lg text-gray-700 leading-relaxed mb-6" {...props} />
+                    blockquote: ({ node, children, ...props }) => (
+                        <blockquote className="bg-gray-100 p-4 rounded-lg text-gray-700 leading-relaxed mb-6" {...props}>
+                            {processChildren(children)}
+                        </blockquote>
                     ),
                     table: ({ node, ...props }) => (
                         <table className="table-auto w-full text-sm text-gray-700 border-collapse border border-gray-300" {...props} />

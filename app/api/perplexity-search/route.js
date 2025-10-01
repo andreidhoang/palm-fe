@@ -56,7 +56,11 @@ export async function POST(req) {
 
                 while (true) {
                     const { done, value } = await reader.read();
-                    if (done) break;
+                    if (done) {
+                        // Flush decoder to get any remaining bytes
+                        buffer += decoder.decode();
+                        break;
+                    }
 
                     // Use stream: true to handle multi-byte characters across chunks
                     buffer += decoder.decode(value, { stream: true });
@@ -117,6 +121,54 @@ export async function POST(req) {
 
                                 } catch (parseError) {
                                     console.error('Error parsing SSE event:', parseError, 'Data:', data);
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Process any remaining buffer after stream ends
+                if (buffer.trim()) {
+                    const lines = buffer.split('\n').filter(line => line.trim() !== '');
+                    
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = line.slice(6).trim();
+                            
+                            if (data !== '[DONE]') {
+                                try {
+                                    const parsed = JSON.parse(data);
+                                    
+                                    // Extract any final content
+                                    if (parsed.choices?.[0]?.delta?.content) {
+                                        const content = parsed.choices[0].delta.content;
+                                        fullText += content;
+                                        
+                                        controller.enqueue(
+                                            encoder.encode(`data: ${JSON.stringify({ 
+                                                type: 'content',
+                                                text: content 
+                                            })}\n\n`)
+                                        );
+                                    }
+
+                                    // Extract final citations and images
+                                    if (parsed.choices?.[0]?.message?.citations) {
+                                        citations = parsed.choices[0].message.citations;
+                                    }
+                                    if (parsed.choices?.[0]?.message?.images) {
+                                        images = parsed.choices[0].message.images;
+                                    }
+                                    if (parsed.choices?.[0]?.finish_reason === 'stop') {
+                                        if (parsed.choices[0].message?.citations) {
+                                            citations = parsed.choices[0].message.citations;
+                                        }
+                                        if (parsed.choices[0].message?.images) {
+                                            images = parsed.choices[0].message.images;
+                                        }
+                                    }
+                                } catch (parseError) {
+                                    console.error('Error parsing final SSE event:', parseError);
                                 }
                             }
                         }
