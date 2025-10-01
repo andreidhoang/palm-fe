@@ -5,9 +5,8 @@ A full-stack Next.js 15 application that clones Perplexity AI functionality. Thi
 - **Frontend**: Next.js 15 with App Router and React 18
 - **Authentication**: Clerk for user authentication (optional - supports guest mode)
 - **Database**: Supabase (PostgreSQL)
-- **Background Jobs**: Inngest for async task processing
-- **AI**: Google Gemini API for content generation
-- **Search**: Tavily API for AI-optimized web search (better than traditional search APIs for LLM applications)
+- **AI & Search**: Perplexity Sonar API for unified search and AI-generated answers with in-line citations
+- **Streaming**: Real-time Server-Sent Events (SSE) for word-by-word answer display
 
 ## Project Structure
 - `/app` - Next.js App Router pages and API routes
@@ -17,7 +16,6 @@ A full-stack Next.js 15 application that clones Perplexity AI functionality. Thi
   - `/_components` - Shared app-level components
 - `/components` - Reusable UI components (shadcn/ui)
 - `/context` - React context providers
-- `/inngest` - Inngest background job functions
 - `/services` - External service integrations (Supabase)
 - `/lib` - Utility functions
 - `/public` - Static assets
@@ -34,13 +32,7 @@ The application requires the following environment variables:
 - `NEXT_PUBLIC_SUPABASE_KEY` - Supabase anon/public key
 
 ### External APIs
-- `BRAVE_API_KEY` - Brave Search API key (server-side)
-- `GEMINI_API_KEY` - Google Gemini API key (server-side, production)
-- `NEXT_PUBLIC_GEMINI_API_KEY` - Google Gemini API key (client-side, development fallback)
-
-### Inngest
-- `INNGEST_EVENT_KEY` - (Optional) Inngest event key for production
-- `INNGEST_SIGNING_KEY` - (Optional) Inngest signing key for production
+- `PERPLEXITY_API_KEY` - Perplexity API key for Sonar models (server-side, required)
 
 ## Development Setup
 The project is configured to run on port 5000 with the command:
@@ -73,20 +65,24 @@ The application uses three main Supabase tables:
 ### Chats Table
 - `id` - Serial primary key
 - `libId` - Foreign key to Library table
-- `aiResp` - AI response text (markdown format)
+- `aiResp` - AI response text with in-line citations in markdown format (e.g., [1], [2])
+- `searchResult` - JSONB array of citation sources from Perplexity API
+- `userSearchInput` - The user's search query
 - `userEmail` - Email of user who received the response
 - `created_at` - Timestamp of response creation
 
 ## Recent Changes
-- 2025-10-01: **Implemented real-time streaming AI responses** - Replaced background job processing with Server-Sent Events (SSE) streaming for word-by-word answer display like Perplexity
-  - Created `/api/llm-stream` endpoint using Google Gemini's streaming API
-  - Robust SSE parsing with proper buffering and error handling
-  - AbortController for request cancellation (prevents memory leaks)
-  - Fixed duplicate answer sections - now displays only the most recent chat
-- 2025-10-01: Replaced Brave Search API with Tavily API for better AI-optimized search results
-- 2025-10-01: Set up Inngest Dev Server workflow for local AI response generation (now optional, streaming is primary method)
+- 2025-10-01: **Integrated Perplexity Sonar API** - Replaced Tavily + Gemini architecture with unified Perplexity Sonar models
+  - Single API call handles both search and AI answer generation
+  - Real-time streaming with Server-Sent Events (SSE) for word-by-word display
+  - In-line citations in format [1], [2] that link directly to sources
+  - Custom citation rendering with clickable superscripts
+  - Removed Inngest workflow (no longer needed with direct streaming)
+  - Created `/api/perplexity-search` endpoint with robust SSE parsing and error handling
+  - AbortController for proper request cancellation and cleanup
+- 2025-10-01: Fixed duplicate answer sections - now displays only the most recent chat conversation
 - 2025-10-01: Added graceful error handling for missing API keys and services
 - 2025-09-30: Initial Replit setup, configured Next.js for Replit proxy, set up workflow
-- 2025-09-30: Implemented comprehensive error handling across all layers (middleware, API routes, database, background jobs)
+- 2025-09-30: Implemented comprehensive error handling across all layers (middleware, API routes, database)
 - 2025-09-30: Created database schema with Users, Library, and Chats tables for full functionality
 - 2025-09-30: Added production security: server-side API keys, fail-closed authentication, proper error responses
