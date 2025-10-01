@@ -78,6 +78,9 @@ The application uses three main Supabase tables:
 - `created_at` - Timestamp of response creation
 
 ## Recent Changes
+- 2025-10-01: Replaced Brave Search API with Tavily API for better AI-optimized search results
+- 2025-10-01: Set up Inngest Dev Server workflow for local AI response generation
+- 2025-10-01: Added graceful error handling for missing API keys and services
 - 2025-09-30: Initial Replit setup, configured Next.js for Replit proxy, set up workflow
 - 2025-09-30: Implemented comprehensive error handling across all layers (middleware, API routes, database, background jobs)
 - 2025-09-30: Created database schema with Users, Library, and Chats tables for full functionality

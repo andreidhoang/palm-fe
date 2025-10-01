@@ -17,6 +17,10 @@ author = "agent"
 task = "workflow.run"
 args = "Server"
 
+[[workflows.workflow.tasks]]
+task = "workflow.run"
+args = "Inngest Dev Server"
+
 [[workflows.workflow]]
 name = "Server"
 author = "agent"
@@ -29,17 +33,45 @@ waitForPort = 5000
 [workflows.workflow.metadata]
 outputType = "webview"
 
+[[workflows.workflow]]
+name = "Inngest Dev Server"
+author = "agent"
+
+[workflows.workflow.metadata]
+outputType = "console"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npx inngest-cli@latest dev -u http://localhost:5000/api/inngest -p 8000"
+waitForPort = 8000
+
 [[ports]]
 localPort = 5000
 externalPort = 80
 
 [[ports]]
-localPort = 34415
+localPort = 8000
+externalPort = 8000
+
+[[ports]]
+localPort = 8289
+externalPort = 3003
+
+[[ports]]
+localPort = 40467
 externalPort = 3001
 
 [[ports]]
 localPort = 44395
 externalPort = 3000
+
+[[ports]]
+localPort = 50052
+externalPort = 4200
+
+[[ports]]
+localPort = 50053
+externalPort = 3002
 
 [deployment]
 deploymentTarget = "autoscale"
