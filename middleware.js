@@ -14,7 +14,11 @@ export default async function middleware(req) {
         const isPublicPath = pathname === '/' || 
                             pathname.startsWith('/sign-in') || 
                             pathname.startsWith('/sign-up') ||
-                            pathname.startsWith('/api/inngest');
+                            pathname.startsWith('/api/inngest') ||
+                            pathname.startsWith('/search') ||
+                            pathname.startsWith('/api/brave-search-api') ||
+                            pathname.startsWith('/api/llm-model') ||
+                            pathname.startsWith('/api/get-inngest-status');
         
         // In production, fail closed: only allow public routes
         if (process.env.NODE_ENV === 'production') {
@@ -40,7 +44,11 @@ export default async function middleware(req) {
             '/sign-in(.*)',
             '/sign-up(.*)',
             '/',
-            '/api/inngest'
+            '/api/inngest',
+            '/search(.*)',
+            '/api/brave-search-api',
+            '/api/llm-model',
+            '/api/get-inngest-status'
         ]);
 
         return clerkMiddleware(async (auth, req) => {

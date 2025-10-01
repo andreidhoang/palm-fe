@@ -35,7 +35,7 @@ function ChatInputBox() {
         const { data, error } = await supabase.from('Library').insert([
             {
                 searchInput: userSearchInput,
-                userEmail: user?.primaryEmailAddress?.emailAddress,
+                userEmail: user?.primaryEmailAddress?.emailAddress || 'guest@example.com',
                 type: searchType,
                 libId: libId
             }
