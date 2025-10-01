@@ -72,15 +72,21 @@ The application uses three main Supabase tables:
 - `created_at` - Timestamp of response creation
 
 ## Recent Changes
+- 2025-10-01: **Removed redundant APIs** - Cleaned up codebase by removing obsolete Tavily, Inngest, and Gemini integrations
+  - Deleted `/api/brave-search-api`, `/api/llm-model`, `/api/inngest`, `/api/get-inngest-status`, `/api/llm-stream` routes
+  - Removed `inngest/` directory and all Inngest workflow code
+  - Uninstalled unused packages: `inngest`, `@google/generative-ai`
+  - Updated middleware to remove obsolete route references
+  - Perplexity Sonar API remains as the sole search and AI provider
 - 2025-10-01: **Integrated Perplexity Sonar API** - Replaced Tavily + Gemini architecture with unified Perplexity Sonar models
   - Single API call handles both search and AI answer generation
   - Real-time streaming with Server-Sent Events (SSE) for word-by-word display
   - In-line citations in format [1], [2] that link directly to sources
   - Custom citation rendering with clickable superscripts
-  - Removed Inngest workflow (no longer needed with direct streaming)
   - Created `/api/perplexity-search` endpoint with robust SSE parsing and error handling
   - AbortController for proper request cancellation and cleanup
 - 2025-10-01: Fixed duplicate answer sections - now displays only the most recent chat conversation
+- 2025-10-01: Fixed sources and images display - properly transformed Perplexity data structures to match UI components
 - 2025-10-01: Added graceful error handling for missing API keys and services
 - 2025-09-30: Initial Replit setup, configured Next.js for Replit proxy, set up workflow
 - 2025-09-30: Implemented comprehensive error handling across all layers (middleware, API routes, database)
