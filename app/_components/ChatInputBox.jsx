@@ -65,9 +65,11 @@ function ChatInputBox() {
                     <Tabs defaultValue="Search" className="w-[400px]">
                         <TabsContent value="Search"><input type='text' placeholder='Ask Anything'
                             onChange={(e) => setUserSearchInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && onSearchQuery()}
                             className='w-full p-4 outline-none' /></TabsContent>
                         <TabsContent value="Research"><input type='text' placeholder='Reaserch Anything'
                             onChange={(e) => setUserSearchInput(e.target.value)}
+                            onKeyPress={(e) => e.key === 'Enter' && onSearchQuery()}
                             className='w-full p-4 outline-none' /></TabsContent>
                         <TabsList>
                             <TabsTrigger value="Search" className={'text-primary'} onClick={() => setSearchType('search')} > <SearchCheck /> Search</TabsTrigger>
