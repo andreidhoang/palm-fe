@@ -44,45 +44,34 @@ function DisplayResult({ searchInputRecord }) {
 
     const GetSearchApiResult = async () => {
         setLoadingSearch(true);
-        const result = await axios.post('/api/brave-search-api', {
-            searchInput: userInput ?? searchInputRecord?.searchInput,
-            searchType: searchInputRecord?.type ?? 'Search'
-        });
-        console.log(result.data);
-        const searchResp = result.data;
-        //Save to DB
-        const formattedSearchResp = searchResp?.web?.results?.map((item, index) => (
-            {
-                title: item?.title,
-                description: item?.description,
-                long_name: item?.profile?.long_name,
-                img: item?.profile?.img,
-                url: item?.url,
-                thumbnail: item?.thumbnail?.src,
-                original: item?.thumbnail?.original
-            }
-        ))
-        console.log(formattedSearchResp);
-        // Fetch Latest From DB
-
+        
+        // Create initial chat record
         const { data, error } = await supabase
             .from('Chats')
             .insert([
                 {
                     libId: libId,
-                    searchResult: formattedSearchResp,
-                    userSearchInput: searchInputRecord?.searchInput
+                    searchResult: [],
+                    userSearchInput: userInput ?? searchInputRecord?.searchInput
                 },
             ])
             .select()
+        
+        if (error) {
+            console.error('Error creating chat:', error);
+            setLoadingSearch(false);
+            return;
+        }
+
         setUserInput('')
         await GetSearchRecords();
         setLoadingSearch(false);
-        await GenerateAIResp(formattedSearchResp, data[0].id)
-        // Pass to LLM Model
+        
+        // Start Perplexity streaming (handles both search and answer)
+        await StreamPerplexitySearch(userInput ?? searchInputRecord?.searchInput, data[0].id)
     }
 
-    const GenerateAIResp = async (formattedSearchResp, recordId) => {
+    const StreamPerplexitySearch = async (searchInput, recordId) => {
         // Cancel any previous streaming request
         if (streamAbortControllerRef.current) {
             streamAbortControllerRef.current.abort();
@@ -92,27 +81,28 @@ function DisplayResult({ searchInputRecord }) {
         streamAbortControllerRef.current = abortController;
 
         try {
-            const response = await fetch('/api/llm-stream', {
+            const response = await fetch('/api/perplexity-search', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    searchInput: searchInputRecord?.searchInput,
-                    searchResult: formattedSearchResp,
+                    searchInput: searchInput,
                     recordId: recordId
                 }),
                 signal: abortController.signal,
             });
 
             if (!response.ok) {
-                console.error('Streaming API error:', response.statusText);
+                console.error('Perplexity API error:', response.statusText);
                 return;
             }
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
             let accumulatedText = '';
+            let citations = [];
+            let images = [];
             let buffer = '';
 
             try {
@@ -132,14 +122,14 @@ function DisplayResult({ searchInputRecord }) {
                             try {
                                 const data = JSON.parse(event.slice(6));
                                 
-                                if (data.text) {
+                                if (data.type === 'content' && data.text) {
                                     accumulatedText += data.text;
-                                    // Update the chat by recordId to avoid race conditions
+                                    // Update the chat with streaming text
                                     setSearchResult(prev => {
                                         if (!prev?.Chats || prev.Chats.length === 0) return prev;
                                         const updatedChats = prev.Chats.map(chat => 
                                             chat.id === recordId 
-                                                ? { ...chat, aiResp: accumulatedText }
+                                                ? { ...chat, aiResp: accumulatedText, citations, images }
                                                 : chat
                                         );
                                         return {
@@ -149,12 +139,57 @@ function DisplayResult({ searchInputRecord }) {
                                     });
                                 }
                                 
-                                if (data.done) {
-                                    console.log('Streaming complete!');
+                                if (data.type === 'citations') {
+                                    citations = data.citations;
+                                    // Update with citations
+                                    setSearchResult(prev => {
+                                        if (!prev?.Chats || prev.Chats.length === 0) return prev;
+                                        const updatedChats = prev.Chats.map(chat => 
+                                            chat.id === recordId 
+                                                ? { ...chat, citations, searchResult: citations }
+                                                : chat
+                                        );
+                                        return {
+                                            ...prev,
+                                            Chats: updatedChats
+                                        };
+                                    });
+                                }
+
+                                if (data.type === 'images') {
+                                    images = data.images;
+                                    // Update with images
+                                    setSearchResult(prev => {
+                                        if (!prev?.Chats || prev.Chats.length === 0) return prev;
+                                        const updatedChats = prev.Chats.map(chat => 
+                                            chat.id === recordId 
+                                                ? { ...chat, images }
+                                                : chat
+                                        );
+                                        return {
+                                            ...prev,
+                                            Chats: updatedChats
+                                        };
+                                    });
                                 }
                                 
-                                if (data.error) {
-                                    console.error('Streaming error:', data.error);
+                                if (data.type === 'done') {
+                                    console.log('Perplexity streaming complete!');
+                                    // Save final data to database
+                                    if (data.fullText) {
+                                        await supabase
+                                            .from('Chats')
+                                            .update({
+                                                aiResp: data.fullText,
+                                                searchResult: data.citations || [],
+                                                images: data.images || []
+                                            })
+                                            .eq('id', recordId);
+                                    }
+                                }
+                                
+                                if (data.type === 'error') {
+                                    console.error('Perplexity error:', data.error);
                                 }
                             } catch (parseError) {
                                 console.error('Error parsing SSE event:', parseError);
@@ -169,7 +204,7 @@ function DisplayResult({ searchInputRecord }) {
             if (error.name === 'AbortError') {
                 console.log('Streaming cancelled');
             } else {
-                console.error('Error generating AI response:', error);
+                console.error('Error with Perplexity search:', error);
             }
         } finally {
             if (streamAbortControllerRef.current === abortController) {
