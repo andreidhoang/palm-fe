@@ -288,50 +288,49 @@ function DisplayResult({ searchInputRecord }) {
                     <div className='w-[70%] mt-2 h-5 bg-accent animate-pulse rounded-md'></div>
 
                 </div>}
-            {searchResult?.Chats && searchResult.Chats.length > 0 && (() => {
-                // Only show the most recent chat
-                const chat = searchResult.Chats[searchResult.Chats.length - 1];
-                return (
-                    <div className='mt-7'>
-                        <h2 className='font-bold text-4xl text-gray-600'>{chat?.userSearchInput || searchResult?.searchInput}</h2>
-                        <div className="flex items-center space-x-6 border-b border-gray-200 pb-2 mt-6">
-                            {tabs.map(({ label, icon: Icon, badge }) => (
-                                <button
-                                    key={label}
-                                    onClick={() => setActiveTab(label)}
-                                    className={`flex items-center gap-1 relative text-sm font-medium text-gray-700 hover:text-black ${activeTab === label ? 'text-black' : ''
-                                        }`}
-                                >
-                                    <Icon className="w-4 h-4" />
-                                    <span>{label}</span>
-                                    {badge && (
-                                        <span className="ml-1 text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
-                                            {badge}
-                                        </span>
-                                    )}
-                                    {activeTab === label && (
-                                        <span className="absolute -bottom-2 left-0 w-full h-0.5 bg-black rounded"></span>
-                                    )}
-                                </button>
-                            ))}
-                            <div className="ml-auto text-sm text-gray-500">
-                                1 task <span className="ml-1">↗</span>
+            {searchResult?.Chats && searchResult.Chats.length > 0 && (
+                <div className='w-full'>
+                    {searchResult.Chats.map((chat, index) => (
+                        <div key={chat.id || index} className='mt-7 w-full'>
+                            <h2 className='font-bold text-4xl text-gray-600'>{chat?.userSearchInput || searchResult?.searchInput}</h2>
+                            <div className="flex items-center space-x-6 border-b border-gray-200 pb-2 mt-6">
+                                {tabs.map(({ label, icon: Icon, badge }) => (
+                                    <button
+                                        key={label}
+                                        onClick={() => setActiveTab(label)}
+                                        className={`flex items-center gap-1 relative text-sm font-medium text-gray-700 hover:text-black ${activeTab === label ? 'text-black' : ''
+                                            }`}
+                                    >
+                                        <Icon className="w-4 h-4" />
+                                        <span>{label}</span>
+                                        {badge && (
+                                            <span className="ml-1 text-xs bg-gray-100 text-gray-600 px-1.5 py-0.5 rounded">
+                                                {badge}
+                                            </span>
+                                        )}
+                                        {activeTab === label && (
+                                            <span className="absolute -bottom-2 left-0 w-full h-0.5 bg-black rounded"></span>
+                                        )}
+                                    </button>
+                                ))}
+                                <div className="ml-auto text-sm text-gray-500">
+                                    {index + 1} of {searchResult.Chats.length}
+                                </div>
                             </div>
-                        </div>
 
-                        <div>
-                            {activeTab == 'Answer' ?
-                                <AnswerDisplay chat={chat} loadingSearch={loadingSearch} /> :
-                                activeTab == 'Images' ? <ImageListTab chat={chat} />
-                                    : activeTab == 'Sources' ?
-                                        <SourceListTab chat={chat} /> : null
-                            }
+                            <div>
+                                {activeTab == 'Answer' ?
+                                    <AnswerDisplay chat={chat} loadingSearch={loadingSearch && index === searchResult.Chats.length - 1} /> :
+                                    activeTab == 'Images' ? <ImageListTab chat={chat} />
+                                        : activeTab == 'Sources' ?
+                                            <SourceListTab chat={chat} /> : null
+                                }
+                            </div>
+                            <hr className='my-5' />
                         </div>
-                        <hr className='my-5' />
-
-                    </div>
-                );
-            })()}
+                    ))}
+                </div>
+            )}
             <div className='h-[200px]'>
             </div>
             <div className='bg-white w-full border rounded-lg 

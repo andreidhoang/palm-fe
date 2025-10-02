@@ -72,6 +72,18 @@ The application uses three main Supabase tables:
 - `created_at` - Timestamp of response creation
 
 ## Recent Changes
+- 2025-10-02: **Implemented conversation thread feature**
+  - Changed display to show ALL conversation messages stacked vertically (previously only showed most recent)
+  - Follow-up input box now works exactly like home page search box
+  - Each question/answer pair displays with its own Answer/Images/Sources tabs
+  - Added conversation counter showing "1 of 3", "2 of 3", etc. to track position in thread
+  - Fixed "signal is aborted without reason" runtime error by wrapping abort() calls in try-catch
+  - Users can now have multi-turn conversations with full context history visible
+- 2025-10-02: **Fixed Sources and Images tabs rendering**
+  - Added safety checks to SourceListTab component for empty/missing data
+  - Sources now display with clickable links and hover effects
+  - Images handled entirely in UI state (not persisted to database due to Supabase schema cache)
+  - Both tabs show helpful "No sources/images available" messages when empty
 - 2025-10-01: **Fixed answer display and streaming errors**
   - Fixed "No search input provided" error on initial page load by properly handling empty strings with `.trim()`
   - Changed validation from `??` operator to `(userInput && userInput.trim()) || fallback` to handle empty strings correctly
