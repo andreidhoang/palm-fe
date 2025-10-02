@@ -1,5 +1,5 @@
 "use client"
-import React from 'react'
+import React, { useEffect, useState } from 'react'
 import {
     Sidebar,
     SidebarContent,
@@ -11,10 +11,12 @@ import {
     SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import Image from 'next/image'
-import { Compass, GalleryHorizontalEnd, LogIn, Search } from 'lucide-react'
-import { usePathname } from 'next/navigation'
+import { Compass, GalleryHorizontalEnd, LogIn, MessageSquare, Search } from 'lucide-react'
+import { usePathname, useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { SignOutButton, SignUpButton, UserButton, useUser } from '@clerk/nextjs'
+import { supabase } from '@/services/supabase'
+import moment from 'moment'
 
 const MenuOptions = [
     {
@@ -36,7 +38,31 @@ const MenuOptions = [
 ]
 function AppSidebar() {
     const path = usePathname();
+    const router = useRouter();
     const { user } = useUser();
+    const [recentConversations, setRecentConversations] = useState([]);
+
+    useEffect(() => {
+        if (user) {
+            fetchRecentConversations();
+        }
+    }, [user]);
+
+    const fetchRecentConversations = async () => {
+        const userEmail = user?.primaryEmailAddress?.emailAddress || 'guest@example.com';
+        
+        const { data, error } = await supabase
+            .from('Library')
+            .select('*')
+            .eq('userEmail', userEmail)
+            .order('created_at', { ascending: false })
+            .limit(5);
+
+        if (!error && data) {
+            setRecentConversations(data);
+        }
+    };
+
     return (
         <Sidebar >
             <SidebarHeader className='bg-accent flex px-6 py-5' >
@@ -60,12 +86,38 @@ function AppSidebar() {
                         ))}
                     </SidebarMenu>
 
-                    {!user ? <SignUpButton mode='modal'>
-                        <Button className='rounded-full mx-4 mt-4'>Sign Up</Button>
-                    </SignUpButton> :
-                        <SignOutButton>
-                            <Button className='rounded-full mx-4 mt-4'>Logout</Button>
-                        </SignOutButton>}
+                    {!user ? (
+                        <SignUpButton mode='modal'>
+                            <Button className='rounded-full mx-4 mt-4'>Sign Up</Button>
+                        </SignUpButton>
+                    ) : (
+                        <div className='mt-6 px-4'>
+                            <div className='flex items-center gap-2 mb-3'>
+                                <MessageSquare className='h-4 w-4 text-gray-600' />
+                                <h3 className='text-sm font-semibold text-gray-600'>Recent Conversations</h3>
+                            </div>
+                            {recentConversations.length === 0 ? (
+                                <p className='text-xs text-gray-400 px-2'>No conversations yet</p>
+                            ) : (
+                                <div className='space-y-2'>
+                                    {recentConversations.map((conv) => (
+                                        <div
+                                            key={conv.id}
+                                            onClick={() => router.push(`/search/${conv.libId}`)}
+                                            className='p-2 rounded-md hover:bg-gray-100 cursor-pointer transition group'
+                                        >
+                                            <p className='text-sm font-medium text-gray-800 truncate group-hover:text-blue-600'>
+                                                {conv?.searchInput || 'Untitled'}
+                                            </p>
+                                            <p className='text-xs text-gray-500 mt-0.5'>
+                                                {moment(conv.created_at).fromNow()}
+                                            </p>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </SidebarGroup>
                 <SidebarGroup />
             </SidebarContent>
