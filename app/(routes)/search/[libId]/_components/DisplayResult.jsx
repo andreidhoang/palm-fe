@@ -36,7 +36,11 @@ function DisplayResult({ searchInputRecord }) {
     useEffect(() => {
         return () => {
             if (streamAbortControllerRef.current) {
-                streamAbortControllerRef.current.abort();
+                try {
+                    streamAbortControllerRef.current.abort();
+                } catch (err) {
+                    // Ignore - signal may already be aborted
+                }
             }
         };
     }, [])
@@ -88,11 +92,7 @@ function DisplayResult({ searchInputRecord }) {
     }
 
     const StreamPerplexitySearch = async (searchInput, recordId) => {
-        // Cancel any previous streaming request
-        if (streamAbortControllerRef.current) {
-            streamAbortControllerRef.current.abort();
-        }
-
+        // Create a new abort controller for this request
         const abortController = new AbortController();
         streamAbortControllerRef.current = abortController;
 
