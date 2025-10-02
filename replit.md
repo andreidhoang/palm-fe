@@ -72,6 +72,16 @@ The application uses three main Supabase tables:
 - `created_at` - Timestamp of response creation
 
 ## Recent Changes
+- 2025-10-02: **Added Recent Conversations to Sidebar**
+  - Replaced logout button with "Recent Conversations" section showing 5 most recent searches
+  - Each conversation displays truncated title and relative timestamp ("2 hours ago")
+  - Click navigation to conversation threads directly from sidebar
+  - Hover effects with color change for better UX
+  - Loading state while fetching conversations
+  - Error handling with console logging for diagnostics
+  - Empty state message when no conversations exist
+  - Guest users still see "Sign Up" button instead
+  - UserButton remains in footer for account management
 - 2025-10-02: **Built comprehensive Library page with conversation management**
   - Created rich conversation cards displaying message count, latest message preview, timestamp, and type badge
   - Implemented date-based grouping (Today, Yesterday, Last 7 days, Last 30 days, Older) with useMemo for performance
