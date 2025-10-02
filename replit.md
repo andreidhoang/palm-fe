@@ -72,6 +72,16 @@ The application uses three main Supabase tables:
 - `created_at` - Timestamp of response creation
 
 ## Recent Changes
+- 2025-10-02: **Built comprehensive Library page with conversation management**
+  - Created rich conversation cards displaying message count, latest message preview, timestamp, and type badge
+  - Implemented date-based grouping (Today, Yesterday, Last 7 days, Last 30 days, Older) with useMemo for performance
+  - Added search/filter functionality to find conversations by keyword with defensive null checks
+  - Delete conversations using correct primary key (id) with confirmation dialog
+  - Sorts Chats by created_at to ensure accurate latest message preview
+  - Defensive coding pattern: `(item?.searchInput || '')` prevents crashes on missing/incomplete data
+  - Empty state, loading states, and responsive design for all screen sizes
+  - Guest mode support with `guest@example.com` fallback
+  - Navigation to conversation threads by clicking conversation cards
 - 2025-10-02: **Fixed duplicate message rendering bug**
   - Added React Strict Mode guard using useRef to prevent duplicate Chat record creation
   - Added database check to prevent duplicate Chats with same search query
