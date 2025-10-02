@@ -41,6 +41,7 @@ function AppSidebar() {
     const router = useRouter();
     const { user } = useUser();
     const [recentConversations, setRecentConversations] = useState([]);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         if (user) {
@@ -49,6 +50,7 @@ function AppSidebar() {
     }, [user]);
 
     const fetchRecentConversations = async () => {
+        setIsLoading(true);
         const userEmail = user?.primaryEmailAddress?.emailAddress || 'guest@example.com';
         
         const { data, error } = await supabase
@@ -58,9 +60,13 @@ function AppSidebar() {
             .order('created_at', { ascending: false })
             .limit(5);
 
-        if (!error && data) {
+        if (error) {
+            console.error('Error fetching recent conversations:', error);
+        } else if (data) {
             setRecentConversations(data);
         }
+        
+        setIsLoading(false);
     };
 
     return (
@@ -96,7 +102,9 @@ function AppSidebar() {
                                 <MessageSquare className='h-4 w-4 text-gray-600' />
                                 <h3 className='text-sm font-semibold text-gray-600'>Recent Conversations</h3>
                             </div>
-                            {recentConversations.length === 0 ? (
+                            {isLoading ? (
+                                <p className='text-xs text-gray-400 px-2'>Loading...</p>
+                            ) : recentConversations.length === 0 ? (
                                 <p className='text-xs text-gray-400 px-2'>No conversations yet</p>
                             ) : (
                                 <div className='space-y-2'>
