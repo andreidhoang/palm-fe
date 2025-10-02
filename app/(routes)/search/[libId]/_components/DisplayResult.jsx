@@ -212,7 +212,7 @@ function DisplayResult({ searchInputRecord }) {
                                 }
                                 
                                 if (data.type === 'done') {
-                                    // Save final data to database
+                                    // Save final data to database (images stay in UI state only)
                                     if (data.fullText) {
                                         const { error: updateError } = await supabase
                                             .from('Chats')
