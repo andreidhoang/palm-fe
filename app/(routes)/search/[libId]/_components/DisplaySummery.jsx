@@ -109,7 +109,7 @@ function DisplaySummery({ aiResp, citations = [] }) {
                             {processChildren(children)}
                         </ol>
                     ),
-                    li: ({ node, children, ...props }) => (
+                    li: ({ node, children, ordered, ...props }) => (
                         <li className="mb-1" {...props}>
                             {processChildren(children)}
                         </li>

@@ -74,9 +74,11 @@ The application uses three main Supabase tables:
 ## Recent Changes
 - 2025-10-02: **Fixed duplicate message rendering bug**
   - Added React Strict Mode guard using useRef to prevent duplicate Chat record creation
+  - Added database check to prevent duplicate Chats with same search query
   - Guard prevents GetSearchApiResult() from firing twice on initial page load
   - Guard resets when navigating to different searches (different libId)
-  - Verified single Perplexity API call per search (no more duplicates)
+  - Double-layer protection ensures single Perplexity API call per search
+  - Fixed React markdown `ordered` attribute console error by filtering non-boolean props
 - 2025-10-02: **Implemented conversation thread feature**
   - Changed display to show ALL conversation messages stacked vertically (previously only showed most recent)
   - Follow-up input box now works exactly like home page search box

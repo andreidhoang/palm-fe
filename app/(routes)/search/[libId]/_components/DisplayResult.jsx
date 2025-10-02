@@ -72,23 +72,39 @@ function DisplayResult({ searchInputRecord }) {
             return;
         }
         
-        // Create initial chat record
-        const { data, error} = await supabase
+        // Check if a Chat already exists for this search query to prevent duplicates
+        const { data: existingChats } = await supabase
             .from('Chats')
-            .insert([
-                {
-                    libId: libId,
-                    searchResult: [],
-                    userSearchInput: searchQuery,
-                    userEmail: searchInputRecord?.userEmail || 'guest@example.com'
-                },
-            ])
-            .select()
+            .select('*')
+            .eq('libId', libId)
+            .eq('userSearchInput', searchQuery)
+            .limit(1);
         
-        if (error) {
-            console.error('Error creating chat:', error);
-            setLoadingSearch(false);
-            return;
+        let chatRecord;
+        
+        if (existingChats && existingChats.length > 0) {
+            // Use existing chat record
+            chatRecord = existingChats[0];
+        } else {
+            // Create new chat record
+            const { data, error} = await supabase
+                .from('Chats')
+                .insert([
+                    {
+                        libId: libId,
+                        searchResult: [],
+                        userSearchInput: searchQuery,
+                        userEmail: searchInputRecord?.userEmail || 'guest@example.com'
+                    },
+                ])
+                .select()
+            
+            if (error) {
+                console.error('Error creating chat:', error);
+                setLoadingSearch(false);
+                return;
+            }
+            chatRecord = data[0];
         }
 
         setUserInput('')
@@ -97,7 +113,7 @@ function DisplayResult({ searchInputRecord }) {
         
         // Start Perplexity streaming (handles both search and answer)
         try {
-            await StreamPerplexitySearch(searchQuery, data[0].id)
+            await StreamPerplexitySearch(searchQuery, chatRecord.id)
         } catch (error) {
             // Silently handle abort errors (expected when navigating away)
             if (error.name !== 'AbortError') {
