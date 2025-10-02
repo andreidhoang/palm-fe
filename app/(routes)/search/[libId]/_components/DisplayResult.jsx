@@ -25,12 +25,27 @@ function DisplayResult({ searchInputRecord }) {
     const [loadingSearch, setLoadingSearch] = useState(false);
     const [userInput, setUserInput] = useState('');
     const streamAbortControllerRef = useRef(null);
+    const initialSearchTriggeredRef = useRef(false);
+    const lastLibIdRef = useRef(null);
     
     useEffect(() => {
-        // Update this method
-        searchInputRecord?.Chats?.length == 0 ? GetSearchApiResult() : GetSearchRecords();
+        // Reset guard when navigating to a different search
+        if (lastLibIdRef.current !== libId) {
+            lastLibIdRef.current = libId;
+            initialSearchTriggeredRef.current = false;
+        }
+        
+        // Guard against React Strict Mode double-firing
+        if (searchInputRecord?.Chats?.length === 0) {
+            if (!initialSearchTriggeredRef.current) {
+                initialSearchTriggeredRef.current = true;
+                GetSearchApiResult();
+            }
+        } else {
+            GetSearchRecords();
+        }
         setSearchResult(searchInputRecord)
-    }, [searchInputRecord])
+    }, [searchInputRecord, libId])
 
     // Cleanup streaming on unmount
     useEffect(() => {

@@ -72,6 +72,11 @@ The application uses three main Supabase tables:
 - `created_at` - Timestamp of response creation
 
 ## Recent Changes
+- 2025-10-02: **Fixed duplicate message rendering bug**
+  - Added React Strict Mode guard using useRef to prevent duplicate Chat record creation
+  - Guard prevents GetSearchApiResult() from firing twice on initial page load
+  - Guard resets when navigating to different searches (different libId)
+  - Verified single Perplexity API call per search (no more duplicates)
 - 2025-10-02: **Implemented conversation thread feature**
   - Changed display to show ALL conversation messages stacked vertically (previously only showed most recent)
   - Follow-up input box now works exactly like home page search box
